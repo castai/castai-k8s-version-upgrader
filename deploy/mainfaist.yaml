@@ -1,0 +1,119 @@
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: castai-node-replicate
+  namespace: castai-agent
+spec:
+  schedule: "0 0 * * 0" 
+  timeZone: Etc/UTC
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: castai-node-replicate
+        spec:
+          serviceAccountName: castai-node-replicate
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 60
+          containers:
+          - name: castai-node-replicate
+            image: ronakpatildocker/castai-node-replicate:latest
+            env:
+            - name: DELAY_AFTER_READY
+              value: "20"
+            - name: CRITICAL_WORKLOADS
+              value: "app.kubernetes.io/name=castai-agent,app.kubernetes.io/name=castai-cluster-controller,app.kubernetes.io/name=another-critical-pod"
+            - name: MIN_READY_NODES
+              value: "2"
+            - name: TOTAL_WAIT_CYCLES
+              value: "25"
+            - name: STARTUP_SLEEP_TIME
+              value: "30"
+            - name: DELAY_WAIT_PENDING_PODS
+              value: "30"
+            - name: MIN_NODE_AGE_DAYS
+              value: "0"
+            - name: NODE_DRAIN_TIMEOUT 
+              value: "1200"
+            - name: CLUSTER_ID 
+              value: ""
+            - name: API_KEY
+              value: ""
+            
+            resources:
+              limits:
+                memory: 500Mi
+              requests:
+                cpu: 50m
+                memory: 500Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: castai-node-replicate
+  namespace: castai-agent
+---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: castai-node-replicate
+# rules:
+# - apiGroups:
+#   - ""
+#   resources:
+#   - events
+#   verbs:
+#   - create
+# - apiGroups:
+#   - ""
+#   resources:
+#   - pods
+#   - namespaces
+#   verbs:
+#   - list
+#   - delete  # Added the 'delete' verb for pods
+# - apiGroups:
+#   - "apps"
+#   resources:
+#   - pods/eviction
+#   verbs:
+#   - create
+# - apiGroups:
+#   - ""
+#   resources:
+#   - nodes
+#   verbs:
+#   - get
+#   - watch
+#   - list
+#   - patch
+# ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: castai-node-replicate
+rules:
+- apiGroups:
+  - "*"
+  resources:
+  - "*"
+  verbs:
+  - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: castai-node-replicate
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: castai-node-replicate
+subjects:
+- kind: ServiceAccount
+  name: castai-node-replicate
+  namespace: castai-agent

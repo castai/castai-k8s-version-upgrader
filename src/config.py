@@ -35,7 +35,7 @@ DELAY_WAIT_PENDING_PODS = get_env_int("DELAY_WAIT_PENDING_PODS", 20)
 # Define the minimum number of ready nodes required before draining critical nodes
 MIN_READY_NODES: int = get_env_int("MIN_READY_NODES", 1)
 
-CRON_JOB_POD_SUBSTRING: str = os.getenv("CRON_JOB_PREFIX", "castai-node-drainer")
+CRON_JOB_POD_SUBSTRING: str = os.getenv("CRON_JOB_PREFIX", "castai-node-replicate")
 
 MIN_NODE_AGE_DAYS: int = get_env_int("MIN_NODE_AGE_DAYS", 0)
 

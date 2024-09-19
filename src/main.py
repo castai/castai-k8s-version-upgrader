@@ -57,6 +57,28 @@ def process_node(v1: CoreV1Api, node_name: str) -> None:
         logging.error(f"Error draining node {node_name}: {e}")
         k8s_events.create_kubernetes_event(v1, "Node", node_name, "default", "CastNodeRotation", "Node drain exception caught", "castai-agent")
     
+def process_cron_job_node(cron_job_node_name, v1):
+    cluster_id = config.CLUSTER_ID
+    api_key = config.API_KEY
+    logging.info(f"Processing cronjob node {cron_job_node_name}")
+    
+    # Rotate the node
+    new_node_id = cast_api_utils.rotate_node(v1=v1, node_name=cron_job_node_name, cluster_id=cluster_id, api_key=api_key)        
+    if new_node_id:
+        logging.info(f"New node is successfully added and ready with ID: {new_node_id}")
+    else:
+        logging.error("Failed to add and ready the node after max retries.")
+    
+    # Get the node ID label
+    castai_cronjon_node_id = cast_api_utils.get_node_label_value(v1, cron_job_node_name, "provisioner.cast.ai/node-id")
+    
+    # Drain the node
+    # node_utils.drain_node_with_timeout(v1, cron_job_node_name, config.NODE_DRAIN_TIMEOUT) #safly evict all except the cronjobpod
+    operation_id = cast_api_utils.drain_cast_node_id(cluster_id=cluster_id, node_id=castai_cronjon_node_id, api_key=api_key) #drain node using castai to buy some time
+    if operation_id:
+        print(f"Drain operation started successfully for cornjob node, Operation ID: {operation_id}")
+    else:
+        print("Failed to start drain operation.")
 
 def main() -> None:
     logging.info("************************************************")
@@ -139,8 +161,24 @@ def main() -> None:
 
     # If the cron job node is not processed yet, process it last
     # if cron_job_node_name :
+    #     cluster_id = config.CLUSTER_ID 
+    #     api_key = config.API_KEY   
     #     logging.info(f"Processing cronjob node {cron_job_node_name}")
-    #     process_node(v1, cron_job_node_name)
+    #     new_node_id = cast_api_utils.rotate_node(v1=v1, node_name=cron_job_node_name, cluster_id=cluster_id, api_key=api_key)        
+    #     if new_node_id:
+    #         logging.info(f"New node is successfully added and ready with ID: {new_node_id}")
+    #     else:
+    #         logging.error("Failed to add and ready the node after max retries.")
+    #     castai_cronjon_node_id = cast_api_utils.get_node_label_value(v1, node_name, "provisioner.cast.ai/node-id")
+    #     operation_id = cast_api_utils.drain_cast_node_id(cluster_id=cluster_id, 
+    #                       node_id=castai_cronjon_node_id, 
+    #                       api_key=api_key)
+    #     if operation_id:
+    #         print(f"Drain operation started successfully, Operation ID: {operation_id}")
+    #     else:
+    #         print("Failed to start drain operation.")
+    if cron_job_node_name:
+        process_cron_job_node(cron_job_node_name, v1)
 
     logging.info("Node rotation completed successfully.")
     exit(0)

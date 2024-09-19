@@ -94,9 +94,32 @@ def add_node(cluster_id: str, api_key: str, instance_type: str, configuration_id
         return None
 
 
-import time
-import requests
-import logging
+def drain_cast_node_id(cluster_id: str, node_id: str, api_key: str) -> str:
+    """
+    Drains a node in the CAST AI external cluster and returns the operationId.
+    
+    :param cluster_id: The ID of the cluster containing the node.
+    :param node_id: The ID of the node to drain.
+    :param api_key: The API key for authentication.
+    :return: The operation ID of the drain operation, or None if there is an error.
+    """
+    api_url = f'https://api.cast.ai/v1/kubernetes/external-clusters/{cluster_id}/nodes/{node_id}/drain'
+    headers = {
+        'X-API-Key': api_key,
+        'accept': 'application/json',
+        'content-type': 'application/json'
+    }
+
+    try:
+        response = requests.post(api_url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        operation_id = data.get('operationId')
+        logging.info(f"Drain node API call successful - Operation ID: {operation_id}")
+        return operation_id
+    except requests.RequestException as e:
+        logging.error(f"Error draining node: {e}")
+        return None
 
 
 def wait_for_node_ready(cluster_id: str, api_key: str, node_id: str, timeout_minutes: int, retry_interval_seconds: int, max_retries: int) -> bool:
