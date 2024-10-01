@@ -27,6 +27,34 @@ def get_cast_ai_nodes(v1: CoreV1Api) -> List[V1Node]:
     logging.info(f"Found {len(nodes)} CAST AI managed nodes.")
     return nodes
 
+def get_old_version_cast_ai_nodes(v1: CoreV1Api) -> Optional[List[V1Node]]:
+    # Retrieve all CAST AI managed nodes
+    nodes = get_cast_ai_nodes(v1)
+    
+    if not nodes:
+        logging.info("No CAST AI managed nodes found.")
+        return None
+
+    # Extract Kubernetes versions from the nodes
+    node_versions = {
+        node.metadata.name: node.status.node_info.kubelet_version for node in nodes
+    }
+
+    # Find the latest Kubernetes version
+    latest_version = max(node_versions.values())
+    logging.info(f" Currently {latest_version} is the latest version of CAST AI managed nodes.")
+    # Filter nodes that are running older versions
+    old_version_nodes = [
+        node for node in nodes
+        if node.status.node_info.kubelet_version < latest_version
+    ]
+    
+    if old_version_nodes:
+        logging.info(f"Found {len(old_version_nodes)} nodes running older Kubernetes versions.")
+        return old_version_nodes
+    else:
+        logging.info("All CAST AI managed nodes are running the latest Kubernetes version.")
+        return None
 
 def cordon_node(v1: CoreV1Api, node_name: str) -> None:
     logging.info(f"Cordoning node: {node_name}...")
@@ -85,7 +113,7 @@ def is_node_running_critical_pods(v1: CoreV1Api, node_name: str) -> bool:
 
 
 def wait_for_new_nodes(v1: CoreV1Api, original_nodes: List[str]) -> List[str]:
-    total_wait_cycles = os.getenv("TOTAL_WAIT_CYCLES", 18)
+    total_wait_cycles = os.getenv("TOTAL_WAIT_CYCLES", 5)
     logging.info("Waiting for new nodes to become ready...")
     while int(total_wait_cycles) > 0:
         nodes: List[V1Node] = v1.list_node().items

@@ -60,6 +60,7 @@ def process_node(v1: CoreV1Api, node_name: str) -> None:
 def process_cron_job_node(cron_job_node_name, v1):
     cluster_id = config.CLUSTER_ID
     api_key = config.API_KEY
+
     logging.info(f"Processing cronjob node {cron_job_node_name}")
     
     # Rotate the node
@@ -88,6 +89,7 @@ def main() -> None:
     startup_sleep_time = config.STARTUP_SLEEP_TIME
     delay_wait_pending_pods = config.DELAY_WAIT_PENDING_PODS
     cron_job_pod_substring = config.CRON_JOB_POD_SUBSTRING
+    replace_old_kube_version = config.REPLACE_OLD_KUBE_VERSION_FLAG
 
     logging.info(f"Sleeping for {startup_sleep_time} seconds before starting node rotation.")
     time.sleep(startup_sleep_time)
@@ -98,8 +100,16 @@ def main() -> None:
     # Get the node name for the running cron job pod
     cron_job_node_name = node_utils.get_node_for_running_pod(v1, cron_job_pod_substring)
     logging.info(f" cronjob node {cron_job_node_name}")
+    
+    original_nodes: List[str] = []
 
-    original_nodes: List[str] = [node.metadata.name for node in node_utils.get_cast_ai_nodes(v1)]
+    if replace_old_kube_version:
+        old_version_nodes = node_utils.get_old_version_cast_ai_nodes(v1)
+        if old_version_nodes:
+            original_nodes = [node.metadata.name for node in old_version_nodes]
+    else:
+        original_nodes = [node.metadata.name for node in node_utils.get_cast_ai_nodes(v1)]
+
     critical_nodes: List[str] = []
     non_critical_nodes: List[str] = []
 
@@ -154,29 +164,8 @@ def main() -> None:
 
     # Process critical nodes last
     for node_name in critical_nodes:
-        if node_name in new_nodes:
-            logging.info(f"Skipping new node {node_name} during critical node processing.")
-            continue
         process_node(v1, node_name)
 
-    # If the cron job node is not processed yet, process it last
-    # if cron_job_node_name :
-    #     cluster_id = config.CLUSTER_ID 
-    #     api_key = config.API_KEY   
-    #     logging.info(f"Processing cronjob node {cron_job_node_name}")
-    #     new_node_id = cast_api_utils.rotate_node(v1=v1, node_name=cron_job_node_name, cluster_id=cluster_id, api_key=api_key)        
-    #     if new_node_id:
-    #         logging.info(f"New node is successfully added and ready with ID: {new_node_id}")
-    #     else:
-    #         logging.error("Failed to add and ready the node after max retries.")
-    #     castai_cronjon_node_id = cast_api_utils.get_node_label_value(v1, node_name, "provisioner.cast.ai/node-id")
-    #     operation_id = cast_api_utils.drain_cast_node_id(cluster_id=cluster_id, 
-    #                       node_id=castai_cronjon_node_id, 
-    #                       api_key=api_key)
-    #     if operation_id:
-    #         print(f"Drain operation started successfully, Operation ID: {operation_id}")
-    #     else:
-    #         print("Failed to start drain operation.")
     if cron_job_node_name:
         process_cron_job_node(cron_job_node_name, v1)
 

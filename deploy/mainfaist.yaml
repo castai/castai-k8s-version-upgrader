@@ -44,6 +44,8 @@ spec:
               value: ""
             - name: API_KEY
               value: ""
+            - name: REPLACE_OLD_KUBE_VERSION_FLAG
+              value: False
             
             resources:
               limits:

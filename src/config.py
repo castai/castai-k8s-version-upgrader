@@ -29,20 +29,16 @@ CRITICAL_WORKLOADS: List[str] = os.getenv(
 
 # check an environment variable for startup sleep time, default 20 seconds
 STARTUP_SLEEP_TIME = get_env_int("STARTUP_SLEEP_TIME", 20)
-
 DELAY_WAIT_PENDING_PODS = get_env_int("DELAY_WAIT_PENDING_PODS", 20)
-
 # Define the minimum number of ready nodes required before draining critical nodes
 MIN_READY_NODES: int = get_env_int("MIN_READY_NODES", 1)
-
-CRON_JOB_POD_SUBSTRING: str = os.getenv("CRON_JOB_PREFIX", "castai-node-replicate")
-
 MIN_NODE_AGE_DAYS: int = get_env_int("MIN_NODE_AGE_DAYS", 0)
-
 NODE_DRAIN_TIMEOUT: int = get_env_int("NODE_DRAIN_TIMEOUT", 1200)
-
 CLUSTER_ID: str = os.getenv("CLUSTER_ID", "")
 API_KEY: str = os.getenv("API_KEY", "")
+REPLACE_OLD_KUBE_VERSION_FLAG = os.getenv("REPLACE_OLD_KUBE_VERSION_FLAG",False)
+CRON_JOB_POD_SUBSTRING: str = os.getenv("CRON_JOB_PREFIX", "castai-node-replicate")
+
 
 def load_config() -> None:
     logging.info("Loading Kubernetes configuration...")
