@@ -1,0 +1,36 @@
+# Default values for castai-node-replicate.
+replicateJob:
+  schedule: "0 0 * * 0"
+  timeZone: "Etc/UTC"
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
+  backoffLimit: 0
+  image:
+    repository: ronakpatildocker/castai-node-replicate
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      memory: 500Mi
+    requests:
+      cpu: 50m
+      memory: 500Mi
+  env:
+    DELAY_AFTER_READY: "20"
+    CRITICAL_WORKLOADS: "app.kubernetes.io/name=castai-agent,app.kubernetes.io/name=castai-cluster-controller,app.kubernetes.io/name=another-critical-pod"
+    MIN_READY_NODES: "2"
+    TOTAL_WAIT_CYCLES: "25"
+    STARTUP_SLEEP_TIME: "30"
+    DELAY_WAIT_PENDING_PODS: "30"
+    MIN_NODE_AGE_DAYS: "0"
+    NODE_DRAIN_TIMEOUT: "1200"
+    CLUSTER_ID: ""
+    API_KEY: ""
+    REPLACE_OLD_KUBE_VERSION_FLAG: ""
+
+serviceAccount:
+  create: true
+  name: "castai-node-replicate"
+
+rbac:
+  create: true
