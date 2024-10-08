@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  castai-node-replicate:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2024-10-08T08:41:18.747103-04:00"
+    description: A Helm chart for CAST AI Node Refresher CronJob
+    digest: b32a317a7e0911d017c7984f48ae399998d7941d6aae6ac07eca4f691c6c6933
+    name: castai-node-replicate
+    type: application
+    urls:
+    - castai-node-replicate-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-10-08T08:41:18.746116-04:00"
