@@ -1,7 +1,7 @@
 default: release
 
 PLATFORMS = linux/amd64,linux/arm64
-APP= "ronakpatildocker/castai-node-replicate"
+APP= "castai/cast-node-replace"
 TAG_LATEST=$(APP):latest
 TAG_VERSION=$(APP):v0.1
 

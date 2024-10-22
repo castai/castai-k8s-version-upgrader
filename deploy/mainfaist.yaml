@@ -22,7 +22,7 @@ spec:
           terminationGracePeriodSeconds: 60
           containers:
           - name: castai-node-replicate
-            image: ronakpatildocker/castai-node-replicate:latest
+            image: castai/cast-node-replace:latest
             env:
             - name: DELAY_AFTER_READY
               value: "20"
