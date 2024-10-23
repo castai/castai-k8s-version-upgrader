@@ -6,7 +6,7 @@ replicateJob:
   failedJobsHistoryLimit: 10
   backoffLimit: 0
   image:
-    repository: ronakpatildocker/castai-node-replicate
+    repository: castai/cast-node-replace
     tag: latest
     pullPolicy: IfNotPresent
   resources:
