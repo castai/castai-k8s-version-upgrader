@@ -27,30 +27,99 @@ def get_cast_ai_nodes(v1: CoreV1Api) -> List[V1Node]:
     logging.info(f"Found {len(nodes)} CAST AI managed nodes.")
     return nodes
 
+def get_all_cluster_nodes(v1: CoreV1Api) -> List[V1Node]:
+    """
+    Retrieve all nodes in the Kubernetes cluster.
+
+    :param v1: CoreV1Api instance
+    :return: List of all V1Node objects in the cluster
+    """
+    logging.info("Retrieving all cluster nodes...")
+    nodes: List[V1Node] = v1.list_node().items  # Fetch all nodes without label filtering
+    logging.info(f"Found {len(nodes)} nodes in the cluster.")
+    return nodes
+
+# def get_old_version_cast_ai_nodes(v1: CoreV1Api) -> Optional[List[V1Node]]:
+#     # Retrieve all CAST AI managed nodes
+#     nodes = get_all_cluster_nodes(v1)
+    
+#     if not nodes:
+#         logging.info("No nodes found.")
+#         return None
+
+#     # Extract Kubernetes versions from the nodes
+#     node_versions = {
+#         node.metadata.name: node.status.node_info.kubelet_version for node in nodes
+#     }
+
+#     # Find the latest Kubernetes version
+#     latest_version = max(node_versions.values())
+#     logging.info(f" Currently {latest_version} is the latest version of nodes.")
+#     # Filter nodes that are running older versions
+#     nodes = get_cast_ai_nodes(v1)
+#     old_version_nodes = [
+#         node for node in nodes
+#         if node.status.node_info.kubelet_version < latest_version
+#     ]
+    
+#     if old_version_nodes:
+#         logging.info(f"Found {len(old_version_nodes)} nodes running older Kubernetes versions.")
+#         return old_version_nodes
+#     else:
+#         logging.info("All CAST AI managed nodes are running the latest Kubernetes version.")
+#         return None
+
+
 def get_old_version_cast_ai_nodes(v1: CoreV1Api) -> Optional[List[V1Node]]:
-    # Retrieve all CAST AI managed nodes
-    nodes = get_cast_ai_nodes(v1)
+    """
+    Identify CAST AI managed nodes running older Kubernetes versions.
+    
+    :param v1: CoreV1Api instance
+    :return: List of CAST AI managed nodes with older Kubernetes versions, or None if all are up-to-date.
+    """
+    logging.info("Starting process to identify CAST AI nodes running older Kubernetes versions...")
+
+    # Retrieve all nodes in the cluster
+    logging.info("Retrieving all nodes in the cluster...")
+    nodes = get_all_cluster_nodes(v1)
     
     if not nodes:
-        logging.info("No CAST AI managed nodes found.")
+        logging.info("No nodes found in the cluster. Exiting.")
         return None
 
-    # Extract Kubernetes versions from the nodes
+    # Extract Kubernetes versions from all nodes
+    logging.info("Extracting Kubernetes versions from all nodes...")
     node_versions = {
         node.metadata.name: node.status.node_info.kubelet_version for node in nodes
     }
-
+    for node_name, version in node_versions.items():
+        logging.debug(f"Node {node_name} is running Kubernetes version {version}.")
+    
     # Find the latest Kubernetes version
     latest_version = max(node_versions.values())
-    logging.info(f" Currently {latest_version} is the latest version of CAST AI managed nodes.")
-    # Filter nodes that are running older versions
+    logging.info(f"The latest Kubernetes version among nodes is {latest_version}.")
+
+    # Retrieve CAST AI managed nodes
+    logging.info("Retrieving CAST AI managed nodes...")
+    cast_ai_nodes = get_cast_ai_nodes(v1)
+    
+    if not cast_ai_nodes:
+        logging.info("No CAST AI managed nodes found. Exiting.")
+        return None
+
+    logging.info(f"Found {len(cast_ai_nodes)} CAST AI managed nodes. Checking their versions...")
+
+    # Filter CAST AI managed nodes with older Kubernetes versions
     old_version_nodes = [
-        node for node in nodes
+        node for node in cast_ai_nodes
         if node.status.node_info.kubelet_version < latest_version
     ]
-    
+
+    # Log results
     if old_version_nodes:
-        logging.info(f"Found {len(old_version_nodes)} nodes running older Kubernetes versions.")
+        logging.info(f"Found {len(old_version_nodes)} CAST AI managed nodes running older Kubernetes versions.")
+        for node in old_version_nodes:
+            logging.debug(f"Node {node.metadata.name} is running Kubernetes version {node.status.node_info.kubelet_version}.")
         return old_version_nodes
     else:
         logging.info("All CAST AI managed nodes are running the latest Kubernetes version.")
